@@ -1,0 +1,133 @@
+import java.util.*;
+import java.io.*;
+import java.math.*;
+import java.util.ArrayList;
+
+/**
+ * Auto-generated code below aims at helping you parse
+ * the standard input according to the problem statement.
+ **/
+class Player {
+
+    public static void main(String args[]) {
+        Scanner in = new Scanner(System.in);
+        int factoryCount = in.nextInt(); // the number of factories
+        int linkCount = in.nextInt(); // the number of links between factories
+        int[][] datosFabrica = new int[factoryCount][3]; // Matriz de fabricas con sus datos
+        ArrayList<int[]> estadosHillClimbing = new ArrayList<int[]>();
+        // Guardamos la informacion de cada fabrica al comienzo del turno
+
+        for (int i = 0; i < linkCount; i++) {
+            int factory1 = in.nextInt();
+            int factory2 = in.nextInt();
+            int distance = in.nextInt();
+        }
+
+        // game loop
+        while (true) {
+            int i = 0;
+            int j = 0;
+            int entityCount = in.nextInt(); // the number of entities (e.g. factories and troops)
+            for (i = 0; i < entityCount; i++) {
+                int entityId = in.nextInt();
+                String entityType = in.next();
+                int arg1 = in.nextInt();
+                int arg2 = in.nextInt();
+                int arg3 = in.nextInt();
+                int arg4 = in.nextInt();
+                int arg5 = in.nextInt();
+                if (entityType.equals("FACTORY")) {
+                    datosFabrica[entityId][0] = entityId; // ID fabrica
+                    datosFabrica[entityId][1] = arg2; // Cantidad cyborgs que hay en la fabrica
+                    datosFabrica[entityId][2] = arg1; // 1 en posesion, -1 enemigo, 0 neutral
+                }
+            }
+            // HILL CLIMBING
+            int cantCyborgEmisor = 0;
+            int cantCyborgReceptor = 0;
+            ArrayList<Integer> nuestrasFabricas = new ArrayList<Integer>();
+            ArrayList<Integer> fabricasVecinas = new ArrayList<Integer>();
+            nuestrasFabricas = traerNuestrasFabricas(datosFabrica);
+            // calculamos todos los estados posibles y la heuristica, y la almacenamos en
+            // una lista
+            estadosHillClimbing.clear();
+            // System.err.println("cantidad de fabricas propias: "+nuestrasFabricas.size());
+            for (i = 0; i < nuestrasFabricas.size(); i++) {
+                fabricasVecinas = traerMisVecinos(datosFabrica, nuestrasFabricas.get(i));
+                for (j = 0; j < fabricasVecinas.size(); j++) {
+                    int[] aux = new int[3];
+                    aux[0] = nuestrasFabricas.get(i); // id fabrica emisora
+                    aux[1] = fabricasVecinas.get(j); // id fabrica receptora
+                    cantCyborgEmisor = heuristicaBase(datosFabrica, nuestrasFabricas.get(i));
+                    cantCyborgReceptor = heuristicaBase(datosFabrica, fabricasVecinas.get(j));
+                    aux[2] = h(cantCyborgEmisor, cantCyborgReceptor); // calculamos la heuristica
+                    estadosHillClimbing.add(aux);
+                }
+                fabricasVecinas.clear();
+            }
+            int[] aux = new int[3];
+            // recorremos todos los estados y elegimos el mejor
+            aux = estadosHillClimbing.get(0);
+            int mejorEmisor = aux[0];
+            int mejorReceptor = aux[1];
+            int mejorHeuristica = aux[2];
+            System.err.println("Antes de entrar al for: " + mejorEmisor + " " + mejorReceptor + " " + mejorHeuristica);
+            for (i = 1; i < estadosHillClimbing.size(); i++) {
+                aux = estadosHillClimbing.get(i);
+                System.err.println("valores aux: " + aux[0] + " " + aux[1] + " " + aux[2]);
+                if (aux[2] > mejorHeuristica) {
+                    mejorEmisor = aux[0];
+                    mejorReceptor = aux[1];
+                    mejorHeuristica = aux[2];
+                    System.err.println("Se actualiza la mejor heuristica con: " + mejorEmisor + " " + mejorReceptor
+                            + " " + mejorHeuristica);
+                }
+            }
+            System.err.println("El siguiente movimiento es: " + mejorReceptor);
+            String movimiento = mejorEmisor + " " + mejorReceptor + " 4";
+            // si la cantidad de cybirg que tiene la fabrica emisora es mayorr estricto que
+            // 3, puedo enviar tropas
+            if (heuristicaBase(datosFabrica, mejorEmisor) > 3) {
+                System.out.println("MOVE " + movimiento);
+            } else {
+                System.out.println("WAIT");
+            }
+        }
+    }
+
+    public static int heuristicaBase(int[][] arreglo, int id) {
+        return arreglo[id][1];
+    }
+
+    // Este metodo devuelve una lista con los id de todas las bases que nos
+    // pertenecen
+    public static ArrayList<Integer> traerNuestrasFabricas(int[][] arreglo) {
+        int i = 0;
+        ArrayList<Integer> res = new ArrayList<Integer>();
+        for (i = 0; i < arreglo.length; i++) {
+            if (arreglo[i][2] == 1) {
+                res.add(arreglo[i][0]);
+            }
+        }
+        return res;
+    }
+
+    // Este metodo devuelve una lista con los id de todas las bases de nuestros
+    // vecinos
+    public static ArrayList<Integer> traerMisVecinos(int[][] arreglo, int id) {
+        int i = 0;
+        ArrayList<Integer> res = new ArrayList<Integer>();
+        for (i = 0; i < arreglo.length; i++) {
+            if (arreglo[i][0] != id) {
+                res.add(arreglo[i][0]);
+            }
+        }
+        return res;
+    }
+
+    // calculo de la funcion heuristica, basada en la suma de las dos heuristicas
+    // que contemplamos
+    public static int h(int cantCyborgEmisor, int cantCyborgReceptor) {
+        return cantCyborgEmisor + (-1 * cantCyborgReceptor);
+    }
+}
